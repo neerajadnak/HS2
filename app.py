@@ -3,6 +3,9 @@ from openai import OpenAI
 import base64
 import os
 
+if "OPENROUTER_API_KEY" not in st.secrets:
+    st.error("🚨 API key not found. Please add it in Streamlit Secrets.")
+    st.stop() 
 # ==============================
 # 🔑 OPENROUTER SETUP
 # ==============================
