@@ -10,7 +10,7 @@ if "OPENROUTER_API_KEY" not in st.secrets:
 # 🔑 OPENROUTER SETUP
 # ==============================
 client = OpenAI(
-    api_key=st.secrets["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"],
+    api_key = st.secrets["OPENROUTER_API_KEY"]
     base_url="https://openrouter.ai/api/v1"
 )
 
