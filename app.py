@@ -4,20 +4,29 @@ import numpy as np
 from PIL import Image
 import cv2
 
-# Page config
 st.set_page_config(page_title="Object Detection App", layout="wide")
 
 st.title("🧠 Object Detection & Counting")
-st.write("Detect objects in images and count them (excluding humans).")
+st.write("Select which objects you want to detect (people excluded by default).")
 
-# Load model (cached)
+# Load model
 @st.cache_resource
 def load_model():
-    return YOLO("yolo11n.pt")  # lighter + faster for cloud
+    return YOLO("yolo11m-seg.pt")
 
 model = load_model()
+class_names = model.names
 
-# Upload image
+# ❌ Remove "person" from selectable list
+object_options = [name for name in class_names.values() if name != "person"]
+
+# ✅ Multi-select
+selected_objects = st.multiselect(
+    "Select objects to detect:",
+    options=object_options,
+    default=object_options[:5]  # default few objects
+)
+
 uploaded_file = st.file_uploader(
     "Upload an image", type=["jpg", "jpeg", "png"]
 )
@@ -31,10 +40,8 @@ if uploaded_file is not None:
     with col1:
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    # Run inference
     results = model(img_array)[0]
 
-    class_names = model.names
     counts = {}
     annotated_img = img_array.copy()
 
@@ -47,10 +54,12 @@ if uploaded_file is not None:
             if label == "person":
                 continue
 
-            # Count objects
+            # ✅ Filter based on user selection
+            if selected_objects and label not in selected_objects:
+                continue
+
             counts[label] = counts.get(label, 0) + 1
 
-            # Draw bounding box
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             cv2.rectangle(annotated_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(
@@ -64,12 +73,12 @@ if uploaded_file is not None:
             )
 
     with col2:
-        st.image(annotated_img, caption="Detected Objects", use_column_width=True)
+        st.image(annotated_img, caption="Filtered Detection", use_column_width=True)
 
-    # Show counts
     st.subheader("📊 Object Counts")
+
     if counts:
         for obj, count in counts.items():
             st.write(f"**{obj}**: {count}")
     else:
-        st.write("No objects detected (excluding people).")
+        st.write("No selected objects detected.")
